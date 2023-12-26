@@ -1,5 +1,7 @@
 # Willow Application Server
 
+## This fork contains tweaks and modifications that may or may not be compatible with official builds of the main project. The changes implemented here are quick and dirty - they work for my purposes, but are not held to the same standards of quality or stability as the main project. Use at your own risk! Consider this an unofficial playground for experiments and rapid prototyping rather than a robust or supported software package.
+
 ## Get Started
 
 We have tried to simplify the onboarding process as much as possible. It is no longer required to build Willow yourself.
@@ -16,6 +18,8 @@ docker run --detach --name=willow-application-server --pull=always --network=hos
 git clone https://github.com/toverainc/willow-application-server.git && cd willow-application-server
 
 ./utils.sh build
+
+./utils.sh builbuild-web-ui
 ```
 
 ### Start

@@ -181,8 +181,9 @@ async def websocket_endpoint(
                         try:
                             #OG
                             #resp = app.command_endpoint.send(jsondata=msg["data"], ws=websocket)
-                            #mas
-                            data = {"label": client.label, **msg["data"]}
+                            #qad
+                            #adds client hostname
+                            data = {"hostname": app.connmgr.get_client_hostname(websocket), **msg["data"]}
                             resp = app.command_endpoint.send(jsondata=data, ws=websocket)
                             if resp is not None:
                                 resp = app.command_endpoint.parse_response(resp)
