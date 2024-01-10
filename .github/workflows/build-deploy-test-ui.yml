@@ -6,11 +6,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
-on:
-  pull_request:
-  push:
-    tag:
-      - '*'
+on: workflow_dispatch  
 
 jobs:
   build_container:
