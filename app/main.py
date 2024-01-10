@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import httpx
 from fastapi import (
     FastAPI,
     Header,
@@ -30,6 +31,7 @@ from app.internal.command_endpoints.main import init_command_endpoint
 from app.internal.was import (
     build_msg,
     get_tz_config,
+    get_webhook,
 )
 
 from .internal.client import Client
@@ -63,6 +65,10 @@ except Exception:
     pass
 
 wake_session = None
+
+# Global httpx.AsyncClient instance
+http_client = httpx.AsyncClient()
+webhook_url, webhook_command = get_webhook()
 
 app.add_middleware(
     CORSMiddleware,
@@ -122,6 +128,9 @@ async def startup_event():
     app.notify_queue = NotifyQueue(connmgr=app.connmgr)
     app.notify_queue.start()
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    await http_client.aclose()
 
 @app.get("/", response_class=RedirectResponse)
 def api_redirect_admin():
@@ -152,9 +161,14 @@ async def websocket_endpoint(
             log.debug(str(data))
             msg = json.loads(data)
 
+            if webhook_command:
+                url = f"{webhook_url}{app.connmgr.get_client_hostname(websocket)}"
+
             # latency sensitive so handle first
             if "wake_start" in msg:
                 global wake_session
+                if webhook_command:
+                    asyncio.create_task(http_client.put(url, data ={'key':'wake'}))
                 if wake_session is not None:
                     if wake_session.done:
                         del wake_session
@@ -169,7 +183,9 @@ async def websocket_endpoint(
                     wake_session.add_event(wake_event)
 
             elif "wake_end" in msg:
-                pass
+                #pass
+                if webhook_command:
+                    asyncio.create_task(http_client.put(url, data ={'key':'wake_end'}))
 
             elif "notify_done" in msg:
                 app.notify_queue.done(websocket, msg["notify_done"])

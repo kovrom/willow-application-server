@@ -106,6 +106,17 @@ def do_get_request(url, verify=False, timeout=(1, 60)):
 def get_config():
     return get_json_from_file(STORAGE_USER_CONFIG)
 
+def get_webhook():
+    try:
+        with open(STORAGE_USER_CONFIG, "r") as file:
+            data = json.load(file)
+            webhook_url = data.get("webhook_url")
+            webhook_command = data.get("webhook_command")
+            return webhook_url, webhook_command
+    except FileNotFoundError:        
+        return None, None
+    except json.JSONDecodeError:        
+        return None, None
 
 def get_devices():
     devices = []
