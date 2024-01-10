@@ -1,5 +1,5 @@
 ---
-name: build_container_test_ui
+name: build_container_my_test_ui
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
