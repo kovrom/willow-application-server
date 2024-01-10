@@ -117,6 +117,17 @@ except Exception as e:
     pass
 
 
+class WillowAutoCorrectTypesenseStartupException(Exception):
+    """Raised when Typesense failed to start
+
+    Attributes:
+        msg -- error message
+    """
+    def __init__(self, msg="Typesense failed to start"):
+        self.msg = msg
+        super().__init__(self.msg)
+
+
 # OpenAI
 if OPENAI_API_KEY != "undefined":
     log.info(f"Initializing OpenAI Client")
@@ -172,7 +183,10 @@ def openai_chat(text, model=OPENAI_MODEL):
 def start_typesense():
     def run(job):
         proc = subprocess.Popen(job)
-        proc.wait()
+        if proc.wait() != 0:
+            raise WillowAutoCorrectTypesenseStartupException
+        else:
+            log.info('Typesense started. Waiting for ready...')
         return proc
 
     log.info('Starting Typesense')
@@ -186,7 +200,6 @@ def start_typesense():
                               target=run, args=(job,), daemon=True)
     thread.start()
 
-    log.info('Typesense started. Waiting for ready...')
     time.sleep(10)
 
 
