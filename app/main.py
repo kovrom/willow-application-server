@@ -33,6 +33,7 @@ from app.internal.was import (
     get_tz_config,
     get_webhook,
 )
+from app.settings import get_settings
 
 from .internal.client import Client
 from .internal.connmgr import ConnMgr
@@ -41,6 +42,7 @@ from .internal.wake import WakeEvent, WakeSession
 from .routers import asset
 from .routers import client
 from .routers import config
+from .routers import info
 from .routers import ota
 from .routers import release
 from .routers import status
@@ -51,12 +53,14 @@ logging.basicConfig(
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
 
+settings = get_settings()
+
 app = FastAPI(title="Willow Application Server",
               description="Willow Management API",
-              version="0.1",
               openapi_url="/openapi.json",
               docs_url="/docs",
-              redoc_url="/redoc")
+              redoc_url="/redoc",
+              version=settings.was_version)
 
 log = logging.getLogger("WAS")
 try:
@@ -141,6 +145,7 @@ def api_redirect_admin():
 app.include_router(asset.router)
 app.include_router(client.router)
 app.include_router(config.router)
+app.include_router(info.router)
 app.include_router(ota.router)
 app.include_router(release.router)
 app.include_router(status.router)
