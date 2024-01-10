@@ -15,7 +15,7 @@ import time
 
 HA_URL = config('HA_URL', default="http://homeassistant.local:8123", cast=str)
 HA_TOKEN = config('HA_TOKEN', default=None, cast=str)
-LOG_LEVEL = config('LOG_LEVEL', default="debug", cast=str).upper()
+WAC_LOG_LEVEL = config('WAC_LOG_LEVEL', default="debug", cast=str).upper()
 TGI_URL = config(f'TGI_URL', default=None, cast=str)
 
 # Typesense config vars
@@ -108,10 +108,10 @@ logging.basicConfig(
 
 log = logging.getLogger("WAC")
 try:
-    log.setLevel(LOG_LEVEL)
-    log.info(f"Set log level {LOG_LEVEL}")
+    log.setLevel(WAC_LOG_LEVEL)
+    log.info(f"Set log level {WAC_LOG_LEVEL}")
 except Exception as e:
-    log.exception(f"Set log level {LOG_LEVEL} failed with {e}")
+    log.exception(f"Set log level {WAC_LOG_LEVEL} failed with {e}")
     pass
 
 
