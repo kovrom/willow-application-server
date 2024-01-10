@@ -175,6 +175,8 @@ def start_typesense():
         proc.wait()
         return proc
 
+    log.info('Starting Typesense')
+
     # Fix this in prod to use some kind of unique/user provided/etc key. Not that big of a deal but...
     job = ['/usr/local/sbin/typesense-server', '--data-dir=/app/data/ts',
            f'--api-key={TYPESENSE_API_KEY}', '--log-dir=/dev/shm', f'--thread-pool-size={TYPESENSE_THREADS}']
@@ -183,6 +185,9 @@ def start_typesense():
     thread = threading.Thread(name='typesense-server',
                               target=run, args=(job,), daemon=True)
     thread.start()
+
+    log.info('Typesense started. Waiting for ready...')
+    time.sleep(10)
 
 
 app = FastAPI(title="WAC Proxy",
@@ -288,10 +293,7 @@ def init_typesense():
 @app.on_event("startup")
 async def startup_event():
     if RUN_MODE == "prod":
-        log.info('Starting Typesense')
         start_typesense()
-        log.info('Typesense started. Waiting for ready...')
-        time.sleep(10)
     init_typesense()
 
 # Add HA entities
