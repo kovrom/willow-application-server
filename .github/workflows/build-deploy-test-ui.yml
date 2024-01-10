@@ -1,0 +1,76 @@
+---
+name: build_container_my_test_ui
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+on: workflow_dispatch  
+
+jobs:
+  build_container:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: download and extract UI tarbal 
+        if: ${{ github.ref_type == 'tag' }}
+        run: |
+          wget https://github.com/kovrom/willow-application-server-ui/releases/download/${{ github.ref_name }}/willow-application-server-ui.tar.gz
+          mkdir static/admin/
+          tar --directory=static/admin/ --strip-components=1 -xzf willow-application-server-ui.tar.gz
+          rm willow-application-server-ui.tar.gz
+
+      - name: get gen-tz.py
+        run: curl --output /tmp/gen-tz.py https://raw.githubusercontent.com/nayarsystems/posix_tz_db/4b9caa3066434b015a99cadb74050fd46b7cc12b/gen-tz.py
+
+      - name: generate tz.json
+        run: python3 /tmp/gen-tz.py --json > tz.json
+
+      - name: configure QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: 'arm64'
+
+      - name: configure buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: login to ghcr.io
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: extract metadata
+        id: metadata
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/0.1.') }}
+            type=raw,value=rc,enable=${{ contains(github.ref, '-rc.') }}
+            type=semver,pattern={{version}}
+            type=ref,event=pr
+            type=ref,event=branch
+
+      - name: git describe
+        run: echo "WAS_VERSION=$(git describe --always --dirty --tags)" >> $GITHUB_OUTPUT
+        id: gd
+
+      - name: build container
+        uses: docker/build-push-action@v4
+        with:
+          build-args:
+            WAS_VERSION=${{ steps.gd.outputs.WAS_VERSION }}
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          labels: ${{ steps.metadata.outputs.labels }}
+          tags: ${{ steps.metadata.outputs.tags }}
