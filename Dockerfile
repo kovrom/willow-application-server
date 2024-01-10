@@ -17,4 +17,6 @@ EXPOSE 8502
 ARG WAS_VERSION
 ENV WAS_VERSION=$WAS_VERSION
 
+COPY --from=typesense/typesense:0.25.2 /opt/typesense-server /usr/local/sbin
+
 CMD /app/entrypoint.sh
