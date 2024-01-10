@@ -45,6 +45,7 @@ from .routers import info
 from .routers import ota
 from .routers import release
 from .routers import status
+from .routers import wac
 
 
 logging.basicConfig(
@@ -144,6 +145,7 @@ app.include_router(info.router)
 app.include_router(ota.router)
 app.include_router(release.router)
 app.include_router(status.router)
+app.include_router(wac.router)
 
 
 # WebSockets with params return 403 when done with APIRouter
