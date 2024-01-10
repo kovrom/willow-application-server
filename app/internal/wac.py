@@ -23,6 +23,7 @@ TGI_URL = config(f'TGI_URL', default=None, cast=str)
 
 # Typesense config vars
 TYPESENSE_API_KEY = config('TYPESENSE_API_KEY', default='testing', cast=str)
+TYPESENSE_DATA_DIR = config('TYPESENSE_DATA_DIR', default='/app/data/ts', cast=str)
 TYPESENSE_HOST = config('TYPESENSE_HOST', default='127.0.0.1', cast=str)
 TYPESENSE_PORT = config('TYPESENSE_PORT', default=8108, cast=int)
 TYPESENSE_PROTOCOL = config('TYPESENSE_PROTOCOL', default='http', cast=str)
@@ -192,7 +193,7 @@ def start_typesense():
     log.info('Starting Typesense')
 
     # Fix this in prod to use some kind of unique/user provided/etc key. Not that big of a deal but...
-    job = ['/usr/local/sbin/typesense-server', '--data-dir=/app/data/ts',
+    job = ['/usr/local/sbin/typesense-server', f'--data-dir={TYPESENSE_DATA_DIR}',
            f'--api-key={TYPESENSE_API_KEY}', '--log-dir=/dev/shm', f'--thread-pool-size={TYPESENSE_THREADS}']
 
     # server thread will remain active as long as FastAPI thread is running
