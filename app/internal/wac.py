@@ -9,6 +9,7 @@ import requests
 
 from datetime import datetime
 from decouple import config
+from pathlib import Path
 import typesense
 
 # For typesense-server when not in dev mode
@@ -23,7 +24,7 @@ TGI_URL = config(f'TGI_URL', default=None, cast=str)
 
 # Typesense config vars
 TYPESENSE_API_KEY = config('TYPESENSE_API_KEY', default='testing', cast=str)
-TYPESENSE_DATA_DIR = config('TYPESENSE_DATA_DIR', default='/app/data/ts', cast=str)
+TYPESENSE_DATA_DIR = config('TYPESENSE_DATA_DIR', default='/app/storage/ts', cast=str)
 TYPESENSE_HOST = config('TYPESENSE_HOST', default='127.0.0.1', cast=str)
 TYPESENSE_PORT = config('TYPESENSE_PORT', default=8108, cast=int)
 TYPESENSE_PROTOCOL = config('TYPESENSE_PROTOCOL', default='http', cast=str)
@@ -191,6 +192,9 @@ def start_typesense():
         return proc
 
     log.info('Starting Typesense')
+
+    # Make sure we always have TYPESENSE_DATA_DIR
+    Path(TYPESENSE_DATA_DIR).mkdir(parents=True, exist_ok=True)
 
     # Fix this in prod to use some kind of unique/user provided/etc key. Not that big of a deal but...
     job = ['/usr/local/sbin/typesense-server', f'--data-dir={TYPESENSE_DATA_DIR}',
