@@ -10,3 +10,15 @@ STORAGE_USER_MULTINET = 'storage/user_multinet.json'
 STORAGE_USER_NVS = 'storage/user_nvs.json'
 STORAGE_USER_WAS = 'storage/user_was.json'
 STORAGE_TZ = 'storage/tz.json'
+
+# order will be reflected on /docs
+OPENAPI_TAGS = [
+    {
+        "name": "WAS",
+        "description": "Willow Application Server",
+    },
+    {
+        "name": "WAC",
+        "description": "Willow Auto Correct",
+    },
+]

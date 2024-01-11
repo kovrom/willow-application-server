@@ -28,6 +28,7 @@ log = getLogger("WAS")
 
 router = APIRouter(
     prefix="/api/wac",
+    tags=["WAC"],
 )
 
 

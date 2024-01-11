@@ -14,7 +14,10 @@ from ..internal.was import get_release_url, get_releases_willow, get_was_url, is
 
 
 log = getLogger("WAS")
-router = APIRouter(prefix="/api")
+router = APIRouter(
+    prefix="/api",
+    tags=["WAS"],
+)
 
 
 class GetRelease(BaseModel):

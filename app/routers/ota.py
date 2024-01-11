@@ -13,7 +13,10 @@ from ..internal.was import get_releases_willow, is_safe_path
 
 
 log = getLogger("WAS")
-router = APIRouter(prefix="/api")
+router = APIRouter(
+    prefix="/api",
+    tags=["WAS"],
+)
 
 
 class GetOta(BaseModel):

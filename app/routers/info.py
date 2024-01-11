@@ -11,6 +11,7 @@ log = getLogger("WAS")
 
 router = APIRouter(
     prefix="/api",
+    tags=["WAS"],
 )
 
 

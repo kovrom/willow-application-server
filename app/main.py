@@ -19,6 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.const import (
     DIR_OTA,
+    OPENAPI_TAGS,
     STORAGE_USER_CONFIG,
 )
 
@@ -82,6 +83,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Willow Application Server",
               description="Willow Management API",
+              openapi_tags=OPENAPI_TAGS,
               openapi_url="/openapi.json",
               docs_url="/docs",
               lifespan=lifespan,
@@ -132,7 +134,7 @@ def get_config_ws():
         return config
 
 
-@app.get("/", response_class=RedirectResponse)
+@app.get("/", response_class=RedirectResponse, tags=["WAS"])
 def api_redirect_admin():
     log.debug('API GET ROOT: Request')
     return "/admin"

@@ -13,6 +13,7 @@ from ..internal.was import get_mime_type, is_safe_path
 log = getLogger("WAS")
 router = APIRouter(
     prefix="/api",
+    tags=["WAS"],
 )
 
 

@@ -14,6 +14,7 @@ from ..internal.was import device_command, get_devices, warm_tts
 log = getLogger("WAS")
 router = APIRouter(
     prefix="/api",
+    tags=["WAS"],
 )
 
 

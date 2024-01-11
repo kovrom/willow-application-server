@@ -23,7 +23,10 @@ from ..internal.was import (
 
 
 log = getLogger("WAS")
-router = APIRouter(prefix="/api")
+router = APIRouter(
+    prefix="/api",
+    tags=["WAS"],
+)
 
 
 class GetConfig(BaseModel):
