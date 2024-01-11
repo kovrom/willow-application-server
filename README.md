@@ -10,7 +10,7 @@ All you have to do is run Willow Application Server and connect to it. From ther
 ### Running WAS
 
 ```
-docker run --detach --name=willow-application-server --pull=always --network=host --restart=unless-stopped --volume=was-storage:/app/storage ghcr.io/kovrom/willow-application-server:0.2.0-rc.2
+docker run --detach --name=willow-application-server --pull=always --network=host --restart=unless-stopped --volume=was-storage:/app/storage ghcr.io/kovrom/willow-application-server:duck
 ```
 
 ### Building WAS
@@ -26,7 +26,45 @@ git clone https://github.com/kovrom/willow-application-server.git && cd willow-a
 ```./utils.sh run```
 
 ## Configure and Upgrade Willow Devices
-Visit ```http://my_was_host:8502``` in your browser.
+Visit ```http://my_was_host:8502``` in your browser.  
+### Pausing/Ducking volume on willow wake  
+This fork of WAS makes a web request PUT on wake and wake end with data payloads  "wake" and "wake_end" with <webhook_id> being your willow box hostname.   
+This allows to run automation, for example pause music or lower volume, etc., while willow is listening to your command.  
+You can setup where WAS sends PUT request in WAS UI.  Set "Webhook URL" in the format of "http://your_hass_ip:8123/api/webhook/" and enable "Send Webhook command on Wake" and restart WAS.  
+Then in your HA you can do the following automation:
+```
+alias: Pause music webhook
+description: ""
+trigger:
+  - platform: webhook
+    allowed_methods:
+      - POST
+      - PUT
+    local_only: true
+    webhook_id: willow-xxxxxxxxxx
+condition: []
+action:
+  - if:
+      - condition: template
+        value_template: "{{ trigger.data['key'] == 'wake' }}"
+      - condition: state
+        entity_id: media_player.your_player
+        state: playing
+    then:
+      - service: media_player.media_pause
+        metadata: {}
+        data: {}
+        target:
+          entity_id: media_player.your_player
+
+    else:      
+      - service: media_player.media_play
+        metadata: {}
+        data: {}
+        target:
+          entity_id: media_player.your_player      
+mode: single
+```
 
 ## Upgrading "Over the Air" (OTA)
 
