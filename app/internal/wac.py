@@ -296,9 +296,12 @@ def init_typesense():
     except:
         log.info(
             f"WAC collection '{COLLECTION}' not found. Initializing with timeout {TYPESENSE_SLOW_TIMEOUT} - please wait.")
-        # Hack around slow initial schema generation because of model download
-        slow_typesense_client.collections.create(wac_commands_schema)
-        log.info(f"WAC collection '{COLLECTION}' initialized")
+        try:
+            # Hack around slow initial schema generation because of model download
+            slow_typesense_client.collections.create(wac_commands_schema)
+            log.info(f"WAC collection '{COLLECTION}' initialized")
+        except typesense.exceptions.ObjectAlreadyExists:
+            pass
 
     log.info(f"Connected to WAC Typesense host '{TYPESENSE_HOST}'")
 
