@@ -29,6 +29,7 @@ from app.internal.command_endpoints import (
     CommandEndpointRuntimeException
 )
 from app.internal.command_endpoints.main import init_command_endpoint
+from app.internal.wac import init_wac
 from app.internal.was import (
     build_msg,
     get_tz_config,
@@ -68,6 +69,11 @@ async def lifespan(app: FastAPI):
     get_tz_config(refresh=True)
 
     app.connmgr = ConnMgr()
+
+    try:
+        init_wac(app)
+    except Exception as e:
+        log.error(f"failed to initialize WAC ({e})")
 
     try:
         init_command_endpoint(app)

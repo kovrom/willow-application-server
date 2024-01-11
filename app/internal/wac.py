@@ -126,6 +126,12 @@ class WillowAutoCorrectTypesenseStartupException(Exception):
         super().__init__(self.msg)
 
 
+def init_wac(app):
+    if RUN_MODE == "prod":
+        start_typesense()
+    init_typesense()
+
+
 # OpenAI
 if OPENAI_API_KEY != "undefined":
     log.info(f"Initializing OpenAI Client")
@@ -296,12 +302,6 @@ def init_typesense():
 
     log.info(f"Connected to WAC Typesense host '{TYPESENSE_HOST}'")
 
-
-@app.on_event("startup")
-async def startup_event():
-    if RUN_MODE == "prod":
-        start_typesense()
-    init_typesense()
 
 # Add HA entities
 
