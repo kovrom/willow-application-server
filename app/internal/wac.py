@@ -13,6 +13,8 @@ import subprocess
 import threading
 import time
 
+from app.internal.was import get_config
+
 HA_URL = config('HA_URL', default="http://homeassistant.local:8123", cast=str)
 HA_TOKEN = config('HA_TOKEN', default=None, cast=str)
 WAC_LOG_LEVEL = config('WAC_LOG_LEVEL', default="debug", cast=str).upper()
@@ -127,9 +129,14 @@ class WillowAutoCorrectTypesenseStartupException(Exception):
 
 
 def init_wac(app):
-    if RUN_MODE == "prod":
-        start_typesense()
-    init_typesense()
+    app.wac_enabled = False
+    user_config = get_config()
+    if "wac_enabled" in user_config and user_config["wac_enabled"]:
+        if RUN_MODE == "prod":
+            start_typesense()
+        init_typesense()
+
+        app.wac_enabled = True
 
 
 # OpenAI

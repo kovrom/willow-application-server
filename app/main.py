@@ -72,6 +72,8 @@ async def lifespan(app: FastAPI):
 
     try:
         init_wac(app)
+        if app.wac_enabled:
+            app.include_router(wac.router)
     except Exception as e:
         log.error(f"failed to initialize WAC ({e})")
 
@@ -153,7 +155,6 @@ app.include_router(info.router)
 app.include_router(ota.router)
 app.include_router(release.router)
 app.include_router(status.router)
-app.include_router(wac.router)
 
 
 # WebSockets with params return 403 when done with APIRouter

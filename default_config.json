@@ -37,6 +37,7 @@
   "timezone_continent_city": "America/Menominee",
   "vad_mode": 2,
   "vad_timeout": 300,
+  "wac_enabled": false,
   "wake_confirmation": false,
   "wake_mode": "2CH_95",
   "wake_word": "alexa",
