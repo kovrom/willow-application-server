@@ -3,6 +3,11 @@ import json
 import requests
 import time
 import websockets
+
+from copy import copy
+
+from jsonget import json_get
+
 from . import (
     CommandEndpoint,
     CommandEndpointResponse,
@@ -76,7 +81,7 @@ class HomeAssistantWebSocketEndpoint(CommandEndpoint):
             if msg["type"] == "event":
                 if msg["event"]["type"] == "intent-end":
                     id = int(msg["id"])
-                    ws = self.connmap[id]
+                    ws = self.connmap[id]["ws"]
                     out = CommandEndpointResult()
                     response_type = msg["event"]["data"]["intent_output"]["response"]["response_type"]
                     if response_type == "action_done":
@@ -101,7 +106,10 @@ class HomeAssistantWebSocketEndpoint(CommandEndpoint):
         id = int(time.time() * 1000)
 
         if id not in self.connmap:
-            self.connmap[id] = ws
+            self.connmap[id] = {
+                'jsondata': copy(jsondata),
+                'ws': ws,
+            }
 
         if "language" in jsondata:
             jsondata.pop("language")
