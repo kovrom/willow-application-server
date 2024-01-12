@@ -2,6 +2,7 @@ import logging
 
 from pydantic import BaseModel
 
+
 class CommandEndpointConfigException(Exception):
     """Raised when an the command endpoint configuration is invalid
 

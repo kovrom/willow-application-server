@@ -6,8 +6,9 @@ import websockets
 
 from copy import copy
 
-from jsonget import json_get
+from jsonget import json_get, json_get_default
 
+from app.internal.wac import FEEDBACK, openai_chat, wac_add, wac_search
 from . import (
     CommandEndpoint,
     CommandEndpointResponse,
@@ -81,12 +82,38 @@ class HomeAssistantWebSocketEndpoint(CommandEndpoint):
             if msg["type"] == "event":
                 if msg["event"]["type"] == "intent-end":
                     id = int(msg["id"])
+                    command = self.connmap[id]["jsondata"]["text"]
                     ws = self.connmap[id]["ws"]
                     out = CommandEndpointResult()
-                    response_type = msg["event"]["data"]["intent_output"]["response"]["response_type"]
-                    if response_type == "action_done":
+                    # not all responses contain speech but default in the pydantic model is "Error"
+                    out.speech = json_get_default(msg, "/event/data/intent_output/response/speech/plain/speech", "")
+                    response_type = json_get(msg, "/event/data/intent_output/response/response_type")
+                    if response_type in ["action_done", "query_answer"]:
                         out.ok = True
-                    out.speech = msg["event"]["data"]["intent_output"]["response"]["speech"]["plain"]["speech"]
+
+                        if self.app.wac_enabled:
+                            learned = wac_add(command, rank=0.9, source='autolearn')
+
+                            if learned is True and FEEDBACK is True:
+                                out.speech = f"{out.speech} and learned command"
+
+                    elif response_type == "error":
+                        response_code = json_get(msg, "/event/data/intent_output/response/data/code")
+                        if response_code == "no_intent_match":
+                            self.log.debug(self.connmap[id])
+
+                            if self.app.wac_enabled:
+                                wac_success, wac_command = wac_search(command)
+
+                                if wac_success:
+                                    jsondata = self.connmap[id]["jsondata"]
+                                    jsondata["text"] = wac_command
+                                    self.send(jsondata, ws)
+                                    self.connmap.pop(id)
+                                    return
+                                else:
+                                    out.speech = openai_chat(command)
+
                     command_endpoint_response = CommandEndpointResponse(result=out)
                     self.log.debug(f"sending {command_endpoint_response} to {ws}")
                     asyncio.ensure_future(ws.send_text(command_endpoint_response.model_dump_json()))
