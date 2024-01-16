@@ -201,11 +201,11 @@ async def websocket_endpoint(
                         try:
                             resp = app.command_endpoint.send(jsondata=msg["data"], ws=websocket)
                             if resp is not None:
-                                resp = app.command_endpoint.parse_response(resp)
-                                log.debug(f"Got response {resp} from endpoint")
+                                parsed_resp = app.command_endpoint.parse_response(resp)
+                                log.debug(f"Got response {parsed_resp} from endpoint")
                                 # HomeAssistantWebSocketEndpoint sends message via callback
-                                if resp is not None:
-                                    asyncio.ensure_future(websocket.send_text(resp.model_dump_json()))
+                                if parsed_resp is not None:
+                                    asyncio.ensure_future(websocket.send_text(parsed_resp.model_dump_json()))
                         except CommandEndpointRuntimeException as e:
                             command_endpoint_result = CommandEndpointResult(speech="WAS Command Endpoint unreachable")
                             command_endpoint_response = CommandEndpointResponse(result=command_endpoint_result)
