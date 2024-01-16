@@ -1,4 +1,7 @@
 import json
+
+from jsonget import json_get
+
 from . import CommandEndpointResponse, CommandEndpointResult
 from .rest import RestAuthType, RestConfig, RestEndpoint
 
@@ -28,8 +31,12 @@ class HomeAssistantRestEndpoint(RestEndpoint):
         return speech
 
     def parse_response(self, response):
+        self.log.debug(f"{self.name}: parsing response {response.text}")
         res = CommandEndpointResult()
-        if response.ok:
+
+        response_type = json_get(response.json(), "/response/response_type")
+
+        if response_type in ["action_done", "query_answer"]:
             res.ok = True
             res.speech = self.get_speech(response.json())
 
