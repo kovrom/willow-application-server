@@ -2,14 +2,21 @@ from datetime import datetime
 from logging import getLogger
 from typing import Optional
 
+import httpx
+
 from jsonget import json_get
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import JSONResponse, StreamingResponse
+from starlette.background import BackgroundTask
 
 from app.internal.wac import (
     COLLECTION,
     CORRECT_ATTEMPTS,
     SEARCH_DISTANCE,
+    TYPESENSE_API_KEY,
+    TYPESENSE_HOST,
+    TYPESENSE_PORT,
+    TYPESENSE_PROTOCOL,
     TYPESENSE_SEMANTIC_MODE,
     TYPESENSE_SEMANTIC_MODEL,
     add_ha_entities,
@@ -99,3 +106,27 @@ async def api_get_wac(
     except Exception as e:
         log.exception(f"Search failed with {e}")
         raise HTTPException(status_code=500, detail="WAC Search Failed")
+
+
+TS_URL = f"{TYPESENSE_PROTOCOL}://{TYPESENSE_HOST}:{TYPESENSE_PORT}"
+ts_client = httpx.AsyncClient(base_url=TS_URL)
+
+
+async def ts_proxy(request: Request):
+    path = request.url.path.replace("/api/wac/typesense", "")
+    url = httpx.URL(path=path, query=request.url.query.encode("utf-8"))
+    log.debug(f"WAC Typesense API proxy: url: {url}")
+    headers = request.headers.mutablecopy()
+    headers["Accept-Encoding"] = "none"
+    headers["X-TYPESENSE-API-KEY"] = TYPESENSE_API_KEY
+    proxy_req = ts_client.build_request(request.method, url, headers=headers, content=await request.body())
+    proxy_res = await ts_client.send(proxy_req, stream=True)
+
+    return StreamingResponse(
+        proxy_res.aiter_raw(),
+        background=BackgroundTask(proxy_res.aclose),
+        headers=proxy_res.headers,
+        status_code=proxy_res.status_code,
+    )
+
+router.add_api_route("/typesense/{path:path}", ts_proxy, methods=["GET", "POST"])
