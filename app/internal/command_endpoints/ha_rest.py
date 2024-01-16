@@ -1,6 +1,6 @@
 import json
 
-from jsonget import json_get
+from jsonget import json_get, json_get_default
 
 from . import CommandEndpointResponse, CommandEndpointResult
 from .rest import RestAuthType, RestConfig, RestEndpoint
@@ -27,7 +27,7 @@ class HomeAssistantRestEndpoint(RestEndpoint):
         return f"{ha_url_scheme}{self.host}:{self.port}/api/conversation/process"
 
     def get_speech(self, data):
-        speech = data["response"]["speech"]["plain"]["speech"]
+        speech = json_get_default(data, "/response/speech/plain/speech", None)
         return speech
 
     def parse_response(self, response):
@@ -35,10 +35,13 @@ class HomeAssistantRestEndpoint(RestEndpoint):
         res = CommandEndpointResult()
 
         response_type = json_get(response.json(), "/response/response_type")
+        speech = self.get_speech(response.json())
+
+        if speech:
+            res.speech = speech
 
         if response_type in ["action_done", "query_answer"]:
             res.ok = True
-            res.speech = self.get_speech(response.json())
 
         command_endpoint_response = CommandEndpointResponse(result=res)
         return command_endpoint_response
