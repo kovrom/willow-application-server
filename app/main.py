@@ -29,7 +29,7 @@ from app.internal.command_endpoints import (
     CommandEndpointRuntimeException
 )
 from app.internal.command_endpoints.main import init_command_endpoint
-from app.internal.wac import init_wac
+from app.internal.wac import FEEDBACK, init_wac, openai_chat, wac_add, wac_search
 from app.internal.was import (
     build_msg,
     get_tz_config,
@@ -203,6 +203,28 @@ async def websocket_endpoint(
                             if resp is not None:
                                 parsed_resp = app.command_endpoint.parse_response(resp)
                                 log.debug(f"Got response {parsed_resp} from endpoint")
+
+                                if app.wac_enabled:
+                                    command = msg["data"]["text"]
+                                    if parsed_resp.result.ok:
+                                        learned = wac_add(command, rank=0.9, source='autolearn')
+                                        if learned and FEEDBACK:
+                                            parsed_resp.result.speech = (
+                                                f"{parsed_resp.result.speech} and learned command"
+                                            )
+
+                                    else:
+                                        wac_success, wac_command = wac_search(command)
+
+                                        if wac_success:
+                                            msg["data"]["text"] = wac_command
+
+                                        else:
+                                            msg["data"]["text"] = openai_chat(command)
+
+                                        resp = app.command_endpoint.send(jsondata=msg["data"], ws=websocket)
+                                        parsed_resp = app.command_endpoint.parse_response(resp)
+
                                 # HomeAssistantWebSocketEndpoint sends message via callback
                                 if parsed_resp is not None:
                                     asyncio.ensure_future(websocket.send_text(parsed_resp.model_dump_json()))
