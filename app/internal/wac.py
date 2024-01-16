@@ -353,7 +353,7 @@ def add_ha_entities():
 # WAC Search
 
 
-def wac_search(command, exact_match=False, distance=SEARCH_DISTANCE, num_results=CORRECT_ATTEMPTS, raw=False, token_match_threshold=TOKEN_MATCH_THRESHOLD, semantic="off", semantic_model=TYPESENSE_SEMANTIC_MODEL, vector_distance_threshold=VECTOR_DISTANCE_THRESHOLD, hybrid_score_threshold=HYBRID_SCORE_THRESHOLD):
+def wac_search(command, exact_match=False, distance=SEARCH_DISTANCE, num_results=CORRECT_ATTEMPTS, raw=False, token_match_threshold=TOKEN_MATCH_THRESHOLD, semantic=TYPESENSE_SEMANTIC_MODE, semantic_model=TYPESENSE_SEMANTIC_MODEL, vector_distance_threshold=VECTOR_DISTANCE_THRESHOLD, hybrid_score_threshold=HYBRID_SCORE_THRESHOLD):
     log.info(f"Searching for command '{command}' with distance {distance} token match threshold {token_match_threshold} exact match {exact_match} semantic {semantic} with vector distance threshold {vector_distance_threshold} and hybrid threshold {hybrid_score_threshold}")
     # Set fail by default
     success = False
