@@ -12,10 +12,9 @@ import subprocess
 import threading
 import time
 
-from app.internal.was import get_config
+from app.internal.was import construct_url, get_config
 
-HA_URL = config('HA_URL', default="http://homeassistant.local:8123", cast=str)
-HA_TOKEN = config('HA_TOKEN', default=None, cast=str)
+
 WAC_LOG_LEVEL = config('WAC_LOG_LEVEL', default="debug", cast=str).upper()
 TGI_URL = config(f'TGI_URL', default=None, cast=str)
 
@@ -40,9 +39,6 @@ if RUN_MODE == "prod":
 
 # Provide user feedback for learned and corrected commands
 FEEDBACK = config(f'FEEDBACK', default=True, cast=bool)
-
-# HA
-HA_TOKEN = f'Bearer {HA_TOKEN}'
 
 # Default number of search results and attempts
 CORRECT_ATTEMPTS = config(
@@ -216,11 +212,6 @@ def start_typesense():
     time.sleep(10)
 
 
-# Basic stuff we need
-ha_headers = {
-    "Authorization": HA_TOKEN,
-}
-
 # The real WAC MVP
 typesense_client = typesense.Client({
     'nodes': [{
@@ -317,9 +308,17 @@ def init_typesense():
 
 def add_ha_entities():
     log.info('Adding entities from HA')
-    entity_types = ['cover.', 'fan.', 'light.', 'switch.']
+    user_config = get_config()
 
-    url = f"{HA_URL}/api/states"
+    if user_config["command_endpoint"] != "Home Assistant":
+        raise Exception("Home Assistant Command Endpoint required!")
+
+    base_url = construct_url(user_config["hass_host"], user_config["hass_port"], user_config["hass_tls"])
+    ha_token = user_config["hass_token"]
+    ha_auth_header = f"Bearer {ha_token}"
+    ha_headers = {"Authorization": ha_auth_header}
+    entity_types = ['cover.', 'fan.', 'light.', 'switch.']
+    url = f"{base_url}/api/states"
 
     response = requests.get(url, headers=ha_headers)
     entities = response.json()
