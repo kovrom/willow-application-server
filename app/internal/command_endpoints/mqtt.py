@@ -108,7 +108,7 @@ class MqttEndpoint(CommandEndpoint):
                 res.speech = "Success!"
 
         command_endpoint_response = CommandEndpointResponse(result=res)
-        return command_endpoint_response.model_dump_json()
+        return command_endpoint_response
 
     def send(self, data=None, jsondata=None, ws=None):
         if not self.connected:
