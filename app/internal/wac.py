@@ -13,7 +13,6 @@ import threading
 import time
 
 from app.internal.was import construct_url, get_config
-from app.settings import get_settings
 
 
 WAC_LOG_LEVEL = config('WAC_LOG_LEVEL', default="debug", cast=str).upper()
@@ -78,8 +77,6 @@ TYPESENSE_SEMANTIC_MODE = config(
 COLLECTION = config(
     'COLLECTION', default='commands', cast=str)
 
-FORCE_OPENAI_MODEL = None
-
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.INFO,
@@ -92,8 +89,6 @@ try:
 except Exception as e:
     log.exception(f"Set log level {WAC_LOG_LEVEL} failed with {e}")
     pass
-
-settings = get_settings()
 
 
 class WillowAutoCorrectTypesenseStartupException(Exception):
@@ -117,55 +112,6 @@ def init_wac(app):
 
         app.wac_enabled = True
 
-
-# OpenAI
-if settings.openai_api_key is not None:
-    log.info(f"Initializing OpenAI Client")
-    import openai
-    openai_client = openai.OpenAI(
-        api_key=settings.openai_api_key, base_url=settings.openai_base_url)
-    models = openai_client.models.list()
-    if len(models.data) == 1:
-        FORCE_OPENAI_MODEL = models.data[0].id
-        log.info(
-            f"Only one model on OpenAI endpoint - forcing model '{FORCE_OPENAI_MODEL}'")
-else:
-    openai_client = None
-
-# OpenAI Chat
-
-
-def openai_chat(text, model=settings.openai_model):
-    log.info(f"OpenAI Chat request for text '{text}'")
-    response = settings.command_not_found
-    if FORCE_OPENAI_MODEL is not None:
-        log.info(f"Forcing model '{FORCE_OPENAI_MODEL}'")
-        model = FORCE_OPENAI_MODEL
-    else:
-        log.info(f"Using model '{model}'")
-    if openai_client is not None:
-        try:
-            chat_completion = openai_client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": settings.openai_system_prompt,
-                    },
-                    {
-                        "role": "user",
-                        "content": text,
-                    }
-                ],
-                model=model,
-                temperature=settings.openai_temperature,
-            )
-            response = chat_completion.choices[0].message.content
-            # Make it friendly for TTS and display output
-            response = response.replace('\n', ' ').replace('\r', '').lstrip()
-            log.info(f"Got OpenAI response '{response}'")
-        except Exception as e:
-            log.info(f"OpenAI failed with '{e}")
-    return response
 
 # Typesense
 

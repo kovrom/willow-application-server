@@ -29,7 +29,8 @@ from app.internal.command_endpoints import (
     CommandEndpointRuntimeException
 )
 from app.internal.command_endpoints.main import init_command_endpoint
-from app.internal.wac import FEEDBACK, init_wac, openai_chat, wac_add, wac_search
+from app.internal.openai import openai_chat
+from app.internal.wac import FEEDBACK, init_wac, wac_add, wac_search
 from app.internal.was import (
     build_msg,
     get_tz_config,

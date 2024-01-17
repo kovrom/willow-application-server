@@ -8,7 +8,8 @@ from copy import copy
 
 from jsonget import json_get, json_get_default
 
-from app.internal.wac import FEEDBACK, openai_chat, wac_add, wac_search
+from app.internal.openai import openai_chat
+from app.internal.wac import FEEDBACK, wac_add, wac_search
 from . import (
     CommandEndpoint,
     CommandEndpointResponse,
