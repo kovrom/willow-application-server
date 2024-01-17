@@ -119,7 +119,7 @@ def init_wac(app):
 
 
 # OpenAI
-if settings.openai_api_key != "undefined":
+if settings.openai_api_key is not None:
     log.info(f"Initializing OpenAI Client")
     import openai
     openai_client = openai.OpenAI(
