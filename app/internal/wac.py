@@ -220,7 +220,7 @@ wac_commands_schema = {
 def init_typesense():
     try:
         typesense_client.collections[COLLECTION].retrieve()
-    except:
+    except Exception:
         log.info(
             f"WAC collection '{COLLECTION}' not found. Initializing with timeout {TYPESENSE_SLOW_TIMEOUT} - please wait.")
         try:
@@ -350,7 +350,7 @@ def wac_search(command, exact_match=False, distance=SEARCH_DISTANCE, num_results
             wac_command = json_get(
                 wac_search_result, "/hits[0]/document/command")
             source = json_get(wac_search_result, "/hits[0]/document/source")
-        except:
+        except Exception:
             log.info(f"Command '{command}' not found")
             return success, command
 
