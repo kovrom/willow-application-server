@@ -222,7 +222,9 @@ def init_typesense():
         typesense_client.collections[COLLECTION].retrieve()
     except Exception:
         log.info(
-            f"WAC collection '{COLLECTION}' not found. Initializing with timeout {TYPESENSE_SLOW_TIMEOUT} - please wait.")
+            f"WAC collection '{COLLECTION}' not found. "
+            f"Initializing with timeout {TYPESENSE_SLOW_TIMEOUT} - please wait."
+        )
         try:
             # Hack around slow initial schema generation because of model download
             slow_typesense_client.collections.create(wac_commands_schema)
@@ -284,7 +286,11 @@ def add_ha_entities():
 
 
 def wac_search(command, exact_match=False, distance=SEARCH_DISTANCE, num_results=CORRECT_ATTEMPTS, raw=False, token_match_threshold=TOKEN_MATCH_THRESHOLD, semantic=TYPESENSE_SEMANTIC_MODE, semantic_model=TYPESENSE_SEMANTIC_MODEL, vector_distance_threshold=VECTOR_DISTANCE_THRESHOLD, hybrid_score_threshold=HYBRID_SCORE_THRESHOLD):
-    log.info(f"Searching for command '{command}' with distance {distance} token match threshold {token_match_threshold} exact match {exact_match} semantic {semantic} with vector distance threshold {vector_distance_threshold} and hybrid threshold {hybrid_score_threshold}")
+    log.info(
+        f"Searching for command '{command}' with distance {distance} token match threshold {token_match_threshold} "
+        f"exact match {exact_match} semantic {semantic} with vector distance threshold {vector_distance_threshold} "
+        f"and hybrid threshold {hybrid_score_threshold}"
+    )
     # Set fail by default
     success = False
     wac_command = command
@@ -369,21 +375,29 @@ def wac_search(command, exact_match=False, distance=SEARCH_DISTANCE, num_results
 
             if vector_distance <= vector_distance_threshold:
                 log.info(
-                    f"WAC Semantic Search passed vector distance threshold {vector_distance_threshold} with result {vector_distance}")
+                    f"WAC Semantic Search passed vector distance threshold {vector_distance_threshold} "
+                    f"with result {vector_distance}"
+                )
                 success = True
             else:
                 log.info(
-                    f"WAC Semantic Search didn't meet vector distance threshold {vector_distance_threshold} with result {vector_distance}")
+                    f"WAC Semantic Search didn't meet vector distance threshold {vector_distance_threshold} "
+                    f"with result {vector_distance}"
+                )
         elif semantic == "hybrid":
             hybrid_score = json_get(
                 wac_search_result, "/hits[0]/hybrid_search_info/rank_fusion_score")
             if hybrid_score >= hybrid_score_threshold:
                 log.info(
-                    f"WAC Semantic Hybrid Search passed hybrid score threshold {hybrid_score_threshold} with result {hybrid_score}")
+                    f"WAC Semantic Hybrid Search passed hybrid score threshold {hybrid_score_threshold} "
+                    f"with result {hybrid_score}"
+                )
                 success = True
             else:
                 log.info(
-                    f"WAC Semantic Hybrid Search didn't meet hybrid score threshold {hybrid_score_threshold} with result {hybrid_score}")
+                    f"WAC Semantic Hybrid Search didn't meet hybrid score threshold {hybrid_score_threshold} "
+                    f"with result {hybrid_score}"
+                )
         # Regular old token match
         else:
             if tokens_matched >= token_match_threshold:
