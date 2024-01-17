@@ -3,10 +3,10 @@ from logging import getLogger
 from app.settings import get_settings
 
 
-FORCE_OPENAI_MODEL = None
-
 log = getLogger("WAS")
 settings = get_settings()
+
+force_openai_model = None
 
 if settings.openai_api_key is not None:
     log.info("Initializing OpenAI Client")
@@ -15,9 +15,9 @@ if settings.openai_api_key is not None:
         api_key=settings.openai_api_key, base_url=settings.openai_base_url)
     models = openai_client.models.list()
     if len(models.data) == 1:
-        FORCE_OPENAI_MODEL = models.data[0].id
+        force_openai_model = models.data[0].id
         log.info(
-            f"Only one model on OpenAI endpoint - forcing model '{FORCE_OPENAI_MODEL}'")
+            f"Only one model on OpenAI endpoint - forcing model '{force_openai_model}'")
 else:
     openai_client = None
 
@@ -25,9 +25,9 @@ else:
 def openai_chat(text, model=settings.openai_model):
     log.info(f"OpenAI Chat request for text '{text}'")
     response = settings.command_not_found
-    if FORCE_OPENAI_MODEL is not None:
-        log.info(f"Forcing model '{FORCE_OPENAI_MODEL}'")
-        model = FORCE_OPENAI_MODEL
+    if force_openai_model is not None:
+        log.info(f"Forcing model '{force_openai_model}'")
+        model = force_openai_model
     else:
         log.info(f"Using model '{model}'")
     if openai_client is not None:
