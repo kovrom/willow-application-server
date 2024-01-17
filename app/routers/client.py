@@ -57,7 +57,7 @@ async def api_get_client(request: Request):
 
 
 class PostClient(BaseModel):
-    action: Literal['restart', 'update', 'config', 'identify', 'notify'] = Field(
+    action: Literal['restart', 'update', 'config', 'identify', 'notify', 'disconnect'] = Field(
         Query(..., description='Client action')
     )
 
@@ -92,6 +92,14 @@ async def api_post_client(request: Request, device: PostClient = Depends()):
         with open(STORAGE_USER_CLIENT_CONFIG, "w") as devices_file:
             json.dump(devices, devices_file)
         devices_file.close()
+    elif device.action == "disconnect":
+        try:
+            ws = request.app.connmgr.get_client_by_hostname(data["hostname"])
+            await ws.close(reason="disconnected via WAS API")
+        except Exception as e:
+            log.error(f"failed to disconnect client: ({e})")
+        finally:
+            return
     elif device.action == 'notify':
         log.debug(f"received notify command on API: {data}")
         warm_tts(data["data"])
