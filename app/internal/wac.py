@@ -16,7 +16,7 @@ from app.internal.was import construct_url, get_config
 
 
 WAC_LOG_LEVEL = config('WAC_LOG_LEVEL', default="debug", cast=str).upper()
-TGI_URL = config(f'TGI_URL', default=None, cast=str)
+TGI_URL = config('TGI_URL', default=None, cast=str)
 
 # Typesense config vars
 TYPESENSE_API_KEY = config('TYPESENSE_API_KEY', default='testing', cast=str)
@@ -30,7 +30,7 @@ TYPESENSE_THREADS = config('TYPESENSE_THREADS', default=8, cast=int)
 TYPESENSE_TIMEOUT = config('TYPESENSE_TIMEOUT', default=1, cast=int)
 
 # "Prod" vs "dev"
-RUN_MODE = config(f'RUN_MODE', default="prod", cast=str)
+RUN_MODE = config('RUN_MODE', default="prod", cast=str)
 if RUN_MODE == "prod":
     TYPESENSE_HOST = "127.0.0.1"
     TYPESENSE_PORT = 8108
@@ -38,7 +38,7 @@ if RUN_MODE == "prod":
 
 
 # Provide user feedback for learned and corrected commands
-FEEDBACK = config(f'FEEDBACK', default=True, cast=bool)
+FEEDBACK = config('FEEDBACK', default=True, cast=bool)
 
 # Default number of search results and attempts
 CORRECT_ATTEMPTS = config(
@@ -316,7 +316,7 @@ def wac_search(command, exact_match=False, distance=SEARCH_DISTANCE, num_results
         'max_candidates': 4,
     }
     if exact_match is True:
-        log.info(f"Doing exact match WAC Search")
+        log.info("Doing exact match WAC Search")
         wac_search_parameters.update({'filter_by': f'command:={command}'})
 
     # Support per request semantic or hybrid semantic search
@@ -339,7 +339,7 @@ def wac_search(command, exact_match=False, distance=SEARCH_DISTANCE, num_results
             wac_search_parameters)
         # For management API
         if raw:
-            log.info(f"Returning raw results")
+            log.info("Returning raw results")
             return wac_search_result
 
         try:
