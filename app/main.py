@@ -64,6 +64,7 @@ except Exception:
 
 settings = get_settings()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     migrate_user_files()
