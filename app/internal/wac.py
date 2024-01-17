@@ -361,7 +361,8 @@ def wac_search(
 
         try:
             id = json_get(wac_search_result, "/hits[0]/document/id")
-            text_score = json_get(wac_search_result, "/hits[0]/text_match")
+            # unused
+            # text_score = json_get(wac_search_result, "/hits[0]/text_match")
             tokens_matched = json_get(
                 wac_search_result, "/hits[0]/text_match_info/tokens_matched")
             wac_command = json_get(
