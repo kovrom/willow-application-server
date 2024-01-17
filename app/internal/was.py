@@ -13,7 +13,6 @@ from hashlib import sha256
 from logging import getLogger
 
 from num2words import num2words
-from websockets.sync.client import connect
 
 from ..const import (
     DIR_OTA,

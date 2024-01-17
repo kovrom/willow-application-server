@@ -1,5 +1,3 @@
-import json
-
 from jsonget import json_get, json_get_default
 
 from . import CommandEndpointResponse, CommandEndpointResult
