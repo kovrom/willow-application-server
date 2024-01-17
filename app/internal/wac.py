@@ -13,6 +13,7 @@ import threading
 import time
 
 from app.internal.was import construct_url, get_config
+from app.settings import get_settings
 
 
 WAC_LOG_LEVEL = config('WAC_LOG_LEVEL', default="debug", cast=str).upper()
@@ -77,25 +78,6 @@ TYPESENSE_SEMANTIC_MODE = config(
 COLLECTION = config(
     'COLLECTION', default='commands', cast=str)
 
-# "OpenAI" Configuration
-OPENAI_BASE_URL = config(
-    'OPENAI_BASE_URL', default="https://api.endpoints.anyscale.com/v1", cast=str)
-
-OPENAI_API_KEY = config(
-    'OPENAI_API_KEY', default="undefined", cast=str)
-
-OPENAI_MODEL = config(
-    'OPENAI_MODEL', default="meta-llama/Llama-2-70b-chat-hf", cast=str)
-
-OPENAI_SYSTEM_PROMPT = config(
-    'OPENAI_SYSTEM_PROMPT', default="Keep your answers as short as possible.", cast=str)
-
-OPENAI_TEMPERATURE = config(
-    'OPENAI_TEMPERATURE', default=0.1, cast=float)
-
-COMMAND_NOT_FOUND = config(
-    'COMMAND_NOT_FOUND', default="Sorry, I can't find that command", cast=str)
-
 FORCE_OPENAI_MODEL = None
 
 logging.basicConfig(
@@ -110,6 +92,8 @@ try:
 except Exception as e:
     log.exception(f"Set log level {WAC_LOG_LEVEL} failed with {e}")
     pass
+
+settings = get_settings()
 
 
 class WillowAutoCorrectTypesenseStartupException(Exception):
@@ -135,11 +119,11 @@ def init_wac(app):
 
 
 # OpenAI
-if OPENAI_API_KEY != "undefined":
+if settings.openai_api_key != "undefined":
     log.info(f"Initializing OpenAI Client")
     import openai
     openai_client = openai.OpenAI(
-        api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+        api_key=settings.openai_api_key, base_url=settings.openai_base_url)
     models = openai_client.models.list()
     if len(models.data) == 1:
         FORCE_OPENAI_MODEL = models.data[0].id
@@ -151,9 +135,9 @@ else:
 # OpenAI Chat
 
 
-def openai_chat(text, model=OPENAI_MODEL):
+def openai_chat(text, model=settings.openai_model):
     log.info(f"OpenAI Chat request for text '{text}'")
-    response = COMMAND_NOT_FOUND
+    response = settings.command_not_found
     if FORCE_OPENAI_MODEL is not None:
         log.info(f"Forcing model '{FORCE_OPENAI_MODEL}'")
         model = FORCE_OPENAI_MODEL
@@ -165,7 +149,7 @@ def openai_chat(text, model=OPENAI_MODEL):
                 messages=[
                     {
                         "role": "system",
-                        "content": OPENAI_SYSTEM_PROMPT,
+                        "content": settings.openai_system_prompt,
                     },
                     {
                         "role": "user",
@@ -173,7 +157,7 @@ def openai_chat(text, model=OPENAI_MODEL):
                     }
                 ],
                 model=model,
-                temperature=OPENAI_TEMPERATURE,
+                temperature=settings.openai_temperature,
             )
             response = chat_completion.choices[0].message.content
             # Make it friendly for TTS and display output
