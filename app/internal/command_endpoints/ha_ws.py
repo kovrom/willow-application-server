@@ -100,7 +100,7 @@ class HomeAssistantWebSocketEndpoint(CommandEndpoint):
 
                     elif response_type == "error":
                         response_code = json_get(msg, "/event/data/intent_output/response/data/code")
-                        if response_code == "no_intent_match":
+                        if response_code in ["no_intent_match", "no_valid_targets"]:
                             self.log.debug(self.connmap[id])
 
                             if self.app.wac_enabled:
