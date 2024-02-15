@@ -66,6 +66,9 @@ except Exception:
 
 settings = get_settings()
 
+# Global httpx.AsyncClient instance
+http_client = httpx.AsyncClient()
+webhook_url, webhook_command = get_webhook()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -104,10 +107,6 @@ app = FastAPI(title="Willow Application Server",
               version=settings.was_version)
 
 wake_session = None
-
-# Global httpx.AsyncClient instance
-http_client = httpx.AsyncClient()
-webhook_url, webhook_command = get_webhook()
 
 app.add_middleware(
     CORSMiddleware,
