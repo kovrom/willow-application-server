@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import httpx
 from fastapi import (
     FastAPI,
     Header,
@@ -34,6 +35,7 @@ from app.internal.wac import FEEDBACK, init_wac, wac_add, wac_search
 from app.internal.was import (
     build_msg,
     get_tz_config,
+    get_webhook,
 )
 from app.settings import get_settings
 
@@ -90,6 +92,7 @@ async def lifespan(app: FastAPI):
 
     yield
     log.info("shutting down")
+    await http_client.aclose()
 
 app = FastAPI(title="Willow Application Server",
               description="Willow Management API",
@@ -101,6 +104,10 @@ app = FastAPI(title="Willow Application Server",
               version=settings.was_version)
 
 wake_session = None
+
+# Global httpx.AsyncClient instance
+http_client = httpx.AsyncClient()
+webhook_url, webhook_command = get_webhook()
 
 app.add_middleware(
     CORSMiddleware,
@@ -174,9 +181,14 @@ async def websocket_endpoint(
             log.debug(str(data))
             msg = json.loads(data)
 
+            if webhook_command:
+                url = f"{webhook_url}{app.connmgr.get_client_hostname(websocket)}"
+
             # latency sensitive so handle first
             if "wake_start" in msg:
                 global wake_session
+                if webhook_command:
+                    asyncio.create_task(http_client.put(url, data ={'key':'wake'}))
                 if wake_session is not None:
                     if wake_session.done:
                         del wake_session
@@ -191,7 +203,9 @@ async def websocket_endpoint(
                     wake_session.add_event(wake_event)
 
             elif "wake_end" in msg:
-                pass
+                #pass
+                if webhook_command:
+                    asyncio.create_task(http_client.put(url, data ={'key':'wake_end'}))
 
             elif "notify_done" in msg:
                 app.notify_queue.done(websocket, msg["notify_done"])
@@ -201,7 +215,12 @@ async def websocket_endpoint(
                     if app.command_endpoint is not None:
                         log.debug(f"Sending {msg['data']} to {app.command_endpoint.name}")
                         try:
-                            resp = app.command_endpoint.send(jsondata=msg["data"], ws=websocket)
+                            #OG
+                            #resp = app.command_endpoint.send(jsondata=msg["data"], ws=websocket)
+                            #qad
+                            #adds client hostname
+                            data = {"hostname": app.connmgr.get_client_hostname(websocket), **msg["data"]}
+                            resp = app.command_endpoint.send(jsondata=data, ws=websocket)
                             if resp is not None:
                                 parsed_resp = app.command_endpoint.parse_response(resp)
                                 log.debug(f"Got response {parsed_resp} from endpoint")

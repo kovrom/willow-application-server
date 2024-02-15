@@ -1,5 +1,7 @@
 # Willow Application Server
 
+## This fork contains tweaks and modifications that may or may not be compatible with official builds of the main project. The changes implemented here are quick and dirty - they work for my purposes, but are not held to the same standards of quality or stability as the main project. Use at your own risk! Consider this an unofficial playground for experiments and rapid prototyping rather than a robust or supported software package.
+
 ## Get Started
 
 We have tried to simplify the onboarding process as much as possible. It is no longer required to build Willow yourself.
@@ -8,14 +10,16 @@ All you have to do is run Willow Application Server and connect to it. From ther
 ### Running WAS
 
 ```
-docker run --detach --name=willow-application-server --pull=always --network=host --restart=unless-stopped --volume=was-storage:/app/storage ghcr.io/toverainc/willow-application-server
+docker run --detach --name=willow-application-server --pull=always --network=host --restart=unless-stopped --volume=was-storage:/app/storage ghcr.io/kovrom/willow-application-server:0.2.0-rc.2
 ```
 
 ### Building WAS
 ```
-git clone https://github.com/toverainc/willow-application-server.git && cd willow-application-server
+git clone https://github.com/kovrom/willow-application-server.git && cd willow-application-server
 
 ./utils.sh build
+
+./utils.sh build-web-ui
 ```
 
 ### Start

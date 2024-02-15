@@ -49,6 +49,15 @@ class ConnMgr:
 
         return None
 
+    def get_client_hostname(self, ws):
+        # Check if the client exists
+        if ws in self.connected_clients:
+            # Return the hostname of the client
+            return self.connected_clients[ws].hostname
+        else:
+            #client is not found
+            return None    
+
     def get_ws_by_mac(self, mac):
         for k, v in self.connected_clients.items():
             # log.debug(f"get_ws_by_mac: {k} {v.mac_addr}")
