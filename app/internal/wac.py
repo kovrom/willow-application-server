@@ -77,6 +77,76 @@ TYPESENSE_SEMANTIC_MODE = config(
 COLLECTION = config(
     'COLLECTION', default='commands', cast=str)
 
+#kv fork vars
+COMMAND_NOT_FOUND = config(
+    'COMMAND_NOT_FOUND', default="Sorry, I can't find that command", cast=str)
+
+# Allow user to adjust feedback text for learned and corrected commands
+COMMAND_LEARNED = config(
+    'COMMAND_LEARNED', default="and learned command", cast=str)
+
+COMMAND_CORRECTED = config(
+    'COMMAND_CORRECTED', default="with corrected command", cast=str)
+# Allow user to skip commands from autolearning
+COMMANDS_TO_SKIP = config(
+    'COMMANDS_TO_SKIP', default='[]')
+
+FORWARD_TO_CHAT = config(f'FORWARD_TO_CHAT', default=False, cast=bool)
+COMMAND_FINAL_HA_FORWARD = config(
+    'COMMAND_FINAL_HA_FORWARD', default="", cast=str) 
+
+#HA include and exclude for "area awareness" hack :)
+AREA_AWARENESS = config(f'AREA_AWARENESS', default=False, cast=bool)
+WILLOW_LOCATIONS = config(
+    'WILLOW_LOCATIONS', default='{}')
+AREA_AWARE_COMMANDS = config(
+    'AREA_AWARE_COMMANDS', default='["turn", "switch"]')
+HA_AREAS = config(
+    'HA_AREAS', default='["bedroom", "breakfast room", "dining room", "garage", "living room", "kitchen", "office", "all"]')
+
+# Getting list of commands to skip
+# Convert the string to a Python list
+try:
+    commands_to_skip_list = json.loads(COMMANDS_TO_SKIP)
+except json.JSONDecodeError:
+# Handle the case where the string is not a valid JSON list
+    log.info(f"Error: COMMANDS_TO_SKIP is not a valid JSON list.")
+    commands_to_skip_list = []
+
+# Convert the WORDS_TO_INCLUDE string to a Python list
+try:
+    words_to_include_list = json.loads(AREA_AWARE_COMMANDS)
+except json.JSONDecodeError:
+# Handle the case where the string is not a valid JSON list
+    log.info(f"Error: AREA_AWARE_COMMANDS is not a valid JSON list.")
+    words_to_include_list = []
+# Convert the WORDS_TO_EXCLUDE string to a Python list
+try:
+    words_to_exclude_list = json.loads(HA_AREAS)
+except json.JSONDecodeError:
+# Handle the case where the string is not a valid JSON list
+    log.info(f"Error: HA_AREAS is not a valid JSON list.")
+    words_to_exclude_list = []
+# Getting dict of willow locations
+# Convert to a dict
+try:
+    willow_locations_dict = json.loads(WILLOW_LOCATIONS)
+except json.JSONDecodeError:
+# Handle the case where the string is not a valid JSON dict
+    log.info(f"Error: WILLOW_LOCATIONS is not a valid JSON dict.")
+    willow_locations_dict = {}    
+
+# Convert COMMANDS_TO_SKIP into a tuple for startswith
+skip_tuple = tuple(commands_to_skip_list)
+
+# Convert the lists to sets
+include_set = set(words_to_include_list)
+exclude_set = set(words_to_exclude_list)
+def check_command(command):
+    lower_command = command.lower()
+    return any(phrase in lower_command for phrase in include_set) and not any(phrase in lower_command for phrase in exclude_set)
+#kv fork vars end
+
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.INFO,

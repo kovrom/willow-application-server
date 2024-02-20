@@ -10,6 +10,8 @@ from jsonget import json_get, json_get_default
 
 from app.internal.openai import openai_chat
 from app.internal.wac import FEEDBACK, wac_add, wac_search
+#kovrom fork
+from app.internal.wac import COMMAND_NOT_FOUND, COMMAND_LEARNED, COMMAND_CORRECTED, COMMANDS_TO_SKIP, FORWARD_TO_CHAT, COMMAND_FINAL_HA_FORWARD, AREA_AWARENESS, WILLOW_LOCATIONS, AREA_AWARE_COMMANDS, HA_AREAS
 from . import (
     CommandEndpoint,
     CommandEndpointResponse,
@@ -17,7 +19,7 @@ from . import (
     CommandEndpointRuntimeException,
 )
 
-
+settings = get_settings()
 class HomeAssistantWebSocketEndpointNotSupportedException(CommandEndpointRuntimeException):
     pass
 
@@ -93,14 +95,15 @@ class HomeAssistantWebSocketEndpoint(CommandEndpoint):
                         out.ok = True
 
                         if self.app.wac_enabled:
+                            #TODO kovrom fork add if for skipping commands to add: if not command.startswith(skip_tuple):
                             learned = wac_add(command, rank=0.9, source='autolearn')
 
                             if learned is True and FEEDBACK is True:
-                                out.speech = f"{out.speech} and learned command"
+                                out.speech = f"{out.speech}. {COMMAND_LEARNED}"
 
                     elif response_type == "error":
                         response_code = json_get(msg, "/event/data/intent_output/response/data/code")
-                        if response_code in ["no_intent_match", "no_valid_targets"]:
+                        if response_code in ("no_intent_match", "no_valid_targets"):
                             self.log.debug(self.connmap[id])
 
                             if self.app.wac_enabled:
@@ -112,8 +115,17 @@ class HomeAssistantWebSocketEndpoint(CommandEndpoint):
                                     self.send(jsondata, ws)
                                     self.connmap.pop(id)
                                     return
-                                else:
+                                #TODO kovrom fork add Final forwarding to HA catch-all "chat"
+                                elif not wac_success and settings.openai_api_key is not None:
                                     out.speech = openai_chat(command)
+                                else:
+                                     if FORWARD_TO_CHAT:
+                                        jsondata = self.connmap[id]["jsondata"]
+                                        jsondata["text"] = f"{COMMAND_FINAL_HA_FORWARD}-{hostname} {command}"
+                                        self.send(jsondata, ws)
+                                        self.connmap.pop(id)
+                                        return
+
 
                     command_endpoint_response = CommandEndpointResponse(result=out)
                     self.log.debug(f"sending {command_endpoint_response} to {ws}")

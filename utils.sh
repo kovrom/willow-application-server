@@ -37,7 +37,7 @@ TAG=${TAG:-latest}
 TORTURE_DELAY=${TORTURE_DELAY:-300}
 
 # Web ui branch
-WEB_UI_BRANCH="main"
+WEB_UI_BRANCH="wac"
 
 # Local working directory for web ui
 WEB_UI_DIR="willow-application-server-ui"
