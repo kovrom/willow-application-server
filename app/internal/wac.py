@@ -1,6 +1,7 @@
 from jsonget import json_get
 import logging
 import requests
+import json
 
 from datetime import datetime
 from decouple import config
@@ -113,38 +114,8 @@ except json.JSONDecodeError:
     log.info(f"Error: COMMANDS_TO_SKIP is not a valid JSON list.")
     commands_to_skip_list = []
 
-# Convert the WORDS_TO_INCLUDE string to a Python list
-try:
-    words_to_include_list = json.loads(AREA_AWARE_COMMANDS)
-except json.JSONDecodeError:
-# Handle the case where the string is not a valid JSON list
-    log.info(f"Error: AREA_AWARE_COMMANDS is not a valid JSON list.")
-    words_to_include_list = []
-# Convert the WORDS_TO_EXCLUDE string to a Python list
-try:
-    words_to_exclude_list = json.loads(HA_AREAS)
-except json.JSONDecodeError:
-# Handle the case where the string is not a valid JSON list
-    log.info(f"Error: HA_AREAS is not a valid JSON list.")
-    words_to_exclude_list = []
-# Getting dict of willow locations
-# Convert to a dict
-try:
-    willow_locations_dict = json.loads(WILLOW_LOCATIONS)
-except json.JSONDecodeError:
-# Handle the case where the string is not a valid JSON dict
-    log.info(f"Error: WILLOW_LOCATIONS is not a valid JSON dict.")
-    willow_locations_dict = {}    
-
 # Convert COMMANDS_TO_SKIP into a tuple for startswith
 skip_tuple = tuple(commands_to_skip_list)
-
-# Convert the lists to sets
-include_set = set(words_to_include_list)
-exclude_set = set(words_to_exclude_list)
-def check_command(command):
-    lower_command = command.lower()
-    return any(phrase in lower_command for phrase in include_set) and not any(phrase in lower_command for phrase in exclude_set)
 #kv fork vars end
 
 logging.basicConfig(
@@ -501,30 +472,33 @@ def wac_search(
 def wac_add(command, rank=0.9, source='autolearn'):
     log.info(f"Doing WAC add for command '{command}'")
     learned = False
-    try:
-        log.info(f"Searching WAC before adding command '{command}'")
-        wac_exact_search_status, wac_command = wac_search(
-            command, exact_match=True)
-        if wac_exact_search_status is True:
-            log.info('Refusing to add duplicate command')
-            return learned
+    if not command.startswith(skip_tuple):        
+        try:
+            log.info(f"Searching WAC before adding command '{command}'")
+            wac_exact_search_status, wac_command = wac_search(
+                command, exact_match=True)
+            if wac_exact_search_status is True:
+                log.info('Refusing to add duplicate command')
+                return learned
 
-        # Get current time as int
-        curr_dt = datetime.now()
-        timestamp = int(round(curr_dt.timestamp()))
-        log.debug(f"Current timestamp: {timestamp}")
-        command_json = {
-            'command': command,
-            'rank': rank,
-            'accuracy': 1.0,
-            'source': source,
-            'timestamp': timestamp,
-        }
-        # Use create to update in real time
-        typesense_client.collections[COLLECTION].documents.create(command_json)
-        log.info(f"Added WAC command '{command}'")
-        learned = True
-    except Exception as e:
-        log.exception(f"WAC add for command '{command}' failed with {e}")
-
+            # Get current time as int
+            curr_dt = datetime.now()
+            timestamp = int(round(curr_dt.timestamp()))
+            log.debug(f"Current timestamp: {timestamp}")
+            command_json = {
+                'command': command,
+                'rank': rank,
+                'accuracy': 1.0,
+                'source': source,
+                'timestamp': timestamp,
+            }
+            # Use create to update in real time
+            typesense_client.collections[COLLECTION].documents.create(command_json)
+            log.info(f"Added WAC command '{command}'")
+            learned = True
+        except Exception as e:
+            log.exception(f"WAC add for command '{command}' failed with {e}")       
+    else:
+        log.info(f"Skipping command '{command}' as it's in the skip list")
+    
     return learned

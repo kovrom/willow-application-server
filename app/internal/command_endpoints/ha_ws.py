@@ -10,8 +10,9 @@ from jsonget import json_get, json_get_default
 
 from app.internal.openai import openai_chat
 from app.internal.wac import FEEDBACK, wac_add, wac_search
-#kovrom fork
-from app.internal.wac import COMMAND_NOT_FOUND, COMMAND_LEARNED, COMMAND_CORRECTED, COMMANDS_TO_SKIP, FORWARD_TO_CHAT, COMMAND_FINAL_HA_FORWARD, AREA_AWARENESS, WILLOW_LOCATIONS, AREA_AWARE_COMMANDS, HA_AREAS
+
+from app.internal.wac import COMMAND_NOT_FOUND, COMMAND_LEARNED, COMMAND_CORRECTED, FORWARD_TO_CHAT, COMMAND_FINAL_HA_FORWARD, AREA_AWARENESS, WILLOW_LOCATIONS, AREA_AWARE_COMMANDS, HA_AREAS
+
 from . import (
     CommandEndpoint,
     CommandEndpointResponse,
@@ -19,7 +20,41 @@ from . import (
     CommandEndpointRuntimeException,
 )
 
+from app.settings import get_settings
+
 settings = get_settings()
+
+#area awareness prep
+# Convert the WORDS_TO_INCLUDE string to a Python list
+try:
+    words_to_include_list = json.loads(AREA_AWARE_COMMANDS)
+except json.JSONDecodeError:
+# Handle the case where the string is not a valid JSON list
+    self.log.info(f"Error: AREA_AWARE_COMMANDS is not a valid JSON list.")
+    words_to_include_list = []
+# Convert the WORDS_TO_EXCLUDE string to a Python list
+try:
+    words_to_exclude_list = json.loads(HA_AREAS)
+except json.JSONDecodeError:
+# Handle the case where the string is not a valid JSON list
+    self.log.info(f"Error: HA_AREAS is not a valid JSON list.")
+    words_to_exclude_list = []
+# Getting dict of willow locations
+# Convert to a dict
+try:
+    willow_locations_dict = json.loads(WILLOW_LOCATIONS)
+except json.JSONDecodeError:
+# Handle the case where the string is not a valid JSON dict
+    self.log.info(f"Error: WILLOW_LOCATIONS is not a valid JSON dict.")
+    willow_locations_dict = {} 
+
+include_set = set(words_to_include_list)
+exclude_set = set(words_to_exclude_list)
+def check_command(command):
+    lower_command = command.lower()
+    return any(phrase in lower_command for phrase in include_set) and not any(phrase in lower_command for phrase in exclude_set)    
+#area awareness prep end
+
 class HomeAssistantWebSocketEndpointNotSupportedException(CommandEndpointRuntimeException):
     pass
 
@@ -85,17 +120,19 @@ class HomeAssistantWebSocketEndpoint(CommandEndpoint):
             if msg["type"] == "event":
                 if msg["event"]["type"] == "intent-end":
                     id = int(msg["id"])
-                    command = self.connmap[id]["jsondata"]["text"]
+                    #get hostname
+                    hostname = self.connmap[id]["jsondata"]["hostname"]
+                    command = self.connmap[id]["jsondata"]["text"]                         
                     ws = self.connmap[id]["ws"]
                     out = CommandEndpointResult()
                     # not all responses contain speech but default in the pydantic model is "Error"
                     out.speech = json_get_default(msg, "/event/data/intent_output/response/speech/plain/speech", "")
-                    response_type = json_get(msg, "/event/data/intent_output/response/response_type")
+                    response_type = json_get(msg, "/event/data/intent_output/response/response_type")                    
                     if response_type in ["action_done", "query_answer"]:
                         out.ok = True
 
                         if self.app.wac_enabled:
-                            #TODO kovrom fork add if for skipping commands to add: if not command.startswith(skip_tuple):
+                            
                             learned = wac_add(command, rank=0.9, source='autolearn')
 
                             if learned is True and FEEDBACK is True:
@@ -105,6 +142,17 @@ class HomeAssistantWebSocketEndpoint(CommandEndpoint):
                         response_code = json_get(msg, "/event/data/intent_output/response/data/code")
                         if response_code in ("no_intent_match", "no_valid_targets"):
                             self.log.debug(self.connmap[id])
+                            #area awareness 
+                            if AREA_AWARENESS and check_command(command):
+                                location = willow_locations_dict.get(hostname)                                                       
+                                aware_command = f"{command} in the {location}"
+                                jsondata = self.connmap[id]["jsondata"]
+                                jsondata["text"] = aware_command
+                                self.send(jsondata, ws)
+                                self.connmap.pop(id)
+                                self.log.debug(f"Trying area aware command: '{aware_command}'")
+                                return
+
 
                             if self.app.wac_enabled:
                                 wac_success, wac_command = wac_search(command)
@@ -115,7 +163,7 @@ class HomeAssistantWebSocketEndpoint(CommandEndpoint):
                                     self.send(jsondata, ws)
                                     self.connmap.pop(id)
                                     return
-                                #TODO kovrom fork add Final forwarding to HA catch-all "chat"
+                                #Final forwarding to HA catch-all "chat"
                                 elif not wac_success and settings.openai_api_key is not None:
                                     out.speech = openai_chat(command)
                                 else:

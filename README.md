@@ -10,7 +10,7 @@ All you have to do is run Willow Application Server and connect to it. From ther
 ### Running WAS
 
 ```
-docker run --detach --name=willow-application-server --pull=always --network=host --restart=unless-stopped --volume=was-storage:/app/storage ghcr.io/kovrom/willow-application-server:0.2.0-rc.2
+docker run --detach --name=willow-application-server --pull=always --network=host --restart=unless-stopped --volume=was-storage:/app/storage ghcr.io/kovrom/willow-application-server:wac
 ```
 
 ### Building WAS
@@ -26,7 +26,108 @@ git clone https://github.com/kovrom/willow-application-server.git && cd willow-a
 ```./utils.sh run```
 
 ## Configure and Upgrade Willow Devices
-Visit ```http://my_was_host:8502``` in your browser.
+Visit ```http://my_was_host:8502``` in your browser.   
+### Pausing/Ducking volume on willow wake  
+This fork of WAS makes a web request PUT on wake and wake end with data payloads  "wake" and "wake_end" with <webhook_id> being your willow box hostname.   
+This allows to run automation, for example pause music or lower volume, etc., while willow is listening to your command.  
+You can setup where WAS sends PUT request in WAS UI.  Set "Webhook URL" in the format of "http://your_hass_ip:8123/api/webhook/" and enable "Send Webhook command on Wake" and restart WAS.  
+Then in your HA you can do the following automation:
+```
+alias: Pause music webhook
+description: ""
+trigger:
+  - platform: webhook
+    allowed_methods:
+      - POST
+      - PUT
+    local_only: true
+    webhook_id: willow-xxxxxxxxxx
+condition: []
+action:
+  - if:
+      - condition: template
+        value_template: "{{ trigger.data['key'] == 'wake' }}"
+      - condition: state
+        entity_id: media_player.your_player
+        state: playing
+    then:
+      - service: media_player.media_pause
+        metadata: {}
+        data: {}
+        target:
+          entity_id: media_player.your_player
+
+    else:      
+      - service: media_player.media_play
+        metadata: {}
+        data: {}
+        target:
+          entity_id: media_player.your_player      
+mode: single
+```
+### Wilow Auto Correct (WAC)   
+To enable WAC go to Configiration -> Advanced, enable Willow Auto Correct (EXPERIMENTAL) and restart WAS.
+
+### Forwarding command when nothing macthed at all 
+Some people find it usefull to do something on "Sorry I couldn't understand that" when all else fails. For example you may want to forward not macthed command to your amazon echo dot, chatgpt or want your HA do something else.      
+It's also possible to configure which Willow device triggers which specific automation or Amazon Echo Dot, Google speaker, etc.       
+For example, you can make it so your "kitchen" Willow only triggers kitchen automations and/or the kitchen Echo Dot, your "office" Willow only triggers office automations and/or the office Echo Dot, etc.     
+
+To do that:
+1. In HA create automation that you want to be triggered. Choose a Sentence Trigger, in the format of: "Your_Trigger-Willow_Hostname", where "Willow_Hostname" is the hostname of your willow, you can get it from WAS Clients page.  For example my kitchen willow hostname is "willow-xxxxxxxxxxxx", so:
+
+  ```
+  Ask Echo-willow-xxxxxxxxxxxx {request}
+  ```
+
+   Add Actions, for example:
+
+   ```
+   service: media_player.play_media
+   data:
+     media_content_type: custom
+     media_content_id: "{{ trigger.slots.request }}"
+   target:
+      entity_id:
+        - media_player.echo_dot_kitchen
+   ``` 
+2. In your wac `.env` file add:
+
+```
+FORWARD_TO_CHAT=True
+COMMAND_FINAL_HA_FORWARD="Ask Echo"
+
+```
+### To adjust how WAC responds, what commands not to autolearn, etc add and edit following to `.env` file:
+```
+COMMAND_LEARNED="Learned new command."
+COMMAND_CORRECTED="I used command"
+COMMANDS_TO_SKIP='["Ask", "Tell Echo"]'
+FEEDBACK=True 
+```
+
+### Area awareness, kind of...
+
+Not the smartest way to do it, but hey, it works for me for the time being :man_shrugging:
+
+In your wac `.env` file add. Where "willow-xxxxxxxxxxx0" is your willow hostname and "office" is your HA area:
+
+```
+AREA_AWARENESS=True
+WILLOW_LOCATIONS='{"willow-xxxxxxxxxxx0": "office", "willow-xxxxxxxxxxx1": "kitchen", "willow-xxxxxxxxxxx2": "bedroom"}'
+
+```
+By default the following areas are defined: "bedroom", "breakfast room", "dining room", "garage", "living room", "kitchen", "office", "all"     
+And two default keywords for "area aware" commands are: "turn", "switch"    
+If you would like to override them you can do so in the .env file. Where AREA_AWARE_COMMANDS are keywords for "area aware" commands and HA_AREAS are your HA areas:
+
+```
+AREA_AWARE_COMMANDS='["turn","switch","something", "something", "dark side" ]'
+
+HA_AREAS='["bedroom","attic","holodeck"]'
+
+
+``` 
 
 ## Upgrading "Over the Air" (OTA)
 
