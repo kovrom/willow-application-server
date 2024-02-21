@@ -18,10 +18,9 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: download and extract UI tarbal 
-        if: ${{ github.ref_type == 'tag' }}
+      - name: download and extract UI tarbal       
         run: |
-          wget https://github.com/kovrom/willow-application-server-ui/releases/download/${{ github.ref_name }}/willow-application-server-ui.tar.gz
+          wget https://github.com/kovrom/willow-application-server-ui/releases/download/wac-mvp/willow-application-server-ui.tar.gz
           mkdir static/admin/
           tar --directory=static/admin/ --strip-components=1 -xzf willow-application-server-ui.tar.gz
           rm willow-application-server-ui.tar.gz
