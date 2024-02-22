@@ -22,7 +22,7 @@ git clone https://github.com/kovrom/willow-application-server.git && cd willow-a
 ./utils.sh build-web-ui
 ```
 
-### Start
+### Start WAS after building it
 ```./utils.sh run```
 
 ## Configure and Upgrade Willow Devices
@@ -66,7 +66,7 @@ action:
 mode: single
 ```
 ### Wilow Auto Correct (WAC)   
-To enable WAC go to Configiration -> Advanced, enable Willow Auto Correct (EXPERIMENTAL) and restart WAS.
+To enable WAC go to Configiration -> Advanced, enable Willow Auto Correct (EXPERIMENTAL) and WAS Command Endpoint (EXPERIMENTAL). Restart WAS container.
 
 ### Forwarding command when nothing macthed at all 
 Some people find it usefull to do something on "Sorry I couldn't understand that" when all else fails. For example you may want to forward not macthed command to your amazon echo dot, chatgpt or want your HA do something else.      
@@ -76,6 +76,8 @@ For example, you can make it so your "kitchen" Willow only triggers kitchen auto
 To do that:
 1. In HA create automation that you want to be triggered. Choose a Sentence Trigger, in the format of: "Your_Trigger-Willow_Hostname", where "Willow_Hostname" is the hostname of your willow, you can get it from WAS Clients page.  For example my kitchen willow hostname is "willow-xxxxxxxxxxxx", so:
 
+  Sentence Trigger:
+  
   ```
   Ask Echo-willow-xxxxxxxxxxxx {request}
   ```
@@ -98,7 +100,7 @@ FORWARD_TO_CHAT=True
 COMMAND_FINAL_HA_FORWARD="Ask Echo"
 
 ```
-### To adjust how WAC responds, what commands not to autolearn, etc add and edit following to `.env` file:
+### To adjust how WAC responds, what commands not to autolearn/skip, etc add and edit following to `.env` file:
 ```
 COMMAND_LEARNED="Learned new command."
 COMMAND_CORRECTED="I used command"
@@ -126,9 +128,27 @@ AREA_AWARE_COMMANDS='["turn","switch","something", "something", "dark side" ]'
 
 HA_AREAS='["bedroom","attic","holodeck"]'
 
-
 ``` 
-
+### Updating/creating .env file   
+If you used `docker run` command mentioned in the "Running WAS" section:
+1. Create your `.env` file with all the variables, for example:
+```
+COMMAND_LEARNED="Learned new command."
+COMMAND_CORRECTED="I used command"
+COMMANDS_TO_SKIP='["Ask","Tell Echo"]'
+FORWARD_TO_CHAT=True
+COMMAND_FINAL_HA_FORWARD="Ask Echo"
+WILLOW_LOCATIONS='{"willow-xxxxxxxxxxx0": "office", "willow-xxxxxxxxxxx1": "kitchen", "willow-xxxxxxxxxxx2": "bedroom"}'
+AREA_AWARENESS=True
+```
+2. Copy it to WAS container:
+```
+docker cp .env willow-application-server:/app
+```
+3. restart your WAS container:
+```
+docker restart willow-application-server
+```   
 ## Upgrading "Over the Air" (OTA)
 
 OTA upgrades allow you to update Willow devices without having to re-connect them to your computer to flash. It's a very safe process with a great deal of verification, automatic rollbacks on upgrade failure, etc.
