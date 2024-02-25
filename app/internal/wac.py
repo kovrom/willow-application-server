@@ -409,6 +409,8 @@ def wac_search(
             wac_command = json_get(
                 wac_search_result, "/hits[0]/document/command")
             source = json_get(wac_search_result, "/hits[0]/document/source")
+            is_alias = json_get_default(wac_search_result, "/hits[0]/document/is_alias", False)
+            alias = json_get_default(wac_search_result, "/hits[0]/document/alias", "")
         except Exception:
             log.info(f"Command '{command}' not found")
             return success, command
@@ -417,7 +419,7 @@ def wac_search(
             log.info(
                 f"Returning exact command '{wac_command}' match with id {id}")
             success = True
-            return success, wac_command
+            return success, wac_command if not is_alias else alias
 
         log.info(
             f"Trying scoring evaluation with top match '{wac_command}' with id {id} from source {source}")
@@ -464,7 +466,7 @@ def wac_search(
     except Exception as e:
         log.exception(f"WAC search for command '{command}' failed with {e}")
 
-    return success, wac_command
+    return success, wac_command if not is_alias else alias
 
 # WAC Add
 
@@ -502,3 +504,39 @@ def wac_add(command, rank=0.9, source='autolearn'):
         log.info(f"Skipping command '{command}' as it's in the skip list")
     
     return learned
+
+# WAC Add alias
+
+
+def wac_add_alias(command, alias, rank=1.0, source='manual_entry'):
+    log.info(f"Doing WAC add for command '{command}' and alias '{alias}'")
+    learned = False
+    try:
+        log.info(f"Searching WAC before adding command '{command}'")
+        wac_exact_search_status, wac_command = wac_search(
+            command, exact_match=True)
+        if wac_exact_search_status is True:
+            log.info('Refusing to add duplicate command')
+            return learned
+
+        # Get current time as int
+        curr_dt = datetime.now()
+        timestamp = int(round(curr_dt.timestamp()))
+        log.debug(f"Current timestamp: {timestamp}")
+        command_json = {
+            'command': command,
+            'is_alias': True,
+            'alias': alias,
+            'rank': rank,
+            'accuracy': 1.0,
+            'source': source,
+            'timestamp': timestamp,
+        }
+        # Use create to update in real time
+        typesense_client.collections[COLLECTION].documents.create(command_json)
+        log.info(f"Added WAC command '{command}' and alias '{alias}'")
+        learned = True
+    except Exception as e:
+        log.exception(f"WAC add for command '{command}' failed with {e}")
+
+    return learned    

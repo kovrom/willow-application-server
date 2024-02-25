@@ -51,6 +51,7 @@ from .routers import ota
 from .routers import release
 from .routers import status
 from .routers import wac
+from .routers import wac_quick_ui
 
 
 logging.basicConfig(
@@ -81,6 +82,8 @@ async def lifespan(app: FastAPI):
         init_wac(app)
         if app.wac_enabled:
             app.include_router(wac.router)
+            #temp wac webui
+            app.include_router(wac_quick_ui.router)
     except Exception as e:
         log.error(f"failed to initialize WAC ({e})")
 

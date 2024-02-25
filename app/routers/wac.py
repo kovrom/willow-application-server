@@ -129,4 +129,20 @@ async def ts_proxy(request: Request):
         status_code=proxy_res.status_code,
     )
 
-router.add_api_route("/typesense/{path:path}", ts_proxy, methods=["GET", "POST"])
+# router.add_api_route("/typesense/{path:path}", ts_proxy, methods=["GET", "POST"])
+# Fix for "Duplicate Operation ID"
+# Define the path operation for GET requests
+router.add_api_route(
+    "/typesense/{path:path}",
+    ts_proxy,
+    methods=["GET"],
+    name="ts_proxy_get"  # Unique name for GET
+)
+
+# Define the path operation for POST requests
+router.add_api_route(
+    "/typesense/{path:path}",
+    ts_proxy,
+    methods=["POST"],
+    name="ts_proxy_post"  # Unique name for POST
+)

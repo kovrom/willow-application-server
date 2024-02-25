@@ -149,6 +149,12 @@ docker cp .env willow-application-server:/app
 ```
 docker restart willow-application-server
 ```   
+### Simple basic WAC UI (not even). Search, delete, add
+
+This fork has a very rudimentary WAC interface at `http://my_was_host:8502/temp/wac-ui/` where you can run a search with various parameters. You can also delete command that was auto-learned wrong. And lastly you can add commands and aliases manually by typing them, you can use it for "seeding" correct commands in the beginning, for example.    
+The search output provided is the raw result from typesense and very verbose.  
+More api info is available at `http://my_was_host:8502/docs` 
+
 ## Upgrading "Over the Air" (OTA)
 
 OTA upgrades allow you to update Willow devices without having to re-connect them to your computer to flash. It's a very safe process with a great deal of verification, automatic rollbacks on upgrade failure, etc.
