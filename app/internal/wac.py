@@ -1,4 +1,4 @@
-from jsonget import json_get
+from jsonget import json_get, json_get_default
 import logging
 import requests
 import json
